@@ -11,7 +11,7 @@ fn main() {
     thread::sleep(time::Duration::from_secs(1));
     println!(
         "Focused for {} seconds!",
-        app.get_interval_duration().unwrap().as_secs()
+        app.get_current_interval_duration().unwrap().as_secs()
     );
 
     app.pause();
@@ -21,7 +21,7 @@ fn main() {
 
     println!(
         "Focused for {} seconds!",
-        app.get_interval_duration().unwrap().as_secs()
+        app.get_current_interval_duration().unwrap().as_secs()
     );
 }
 
@@ -63,7 +63,7 @@ impl App {
             .push(Interval::new());
     }
 
-    pub fn get_interval_duration(&self) -> Option<Duration> {
+    pub fn get_current_interval_duration(&self) -> Option<Duration> {
         if let Some(interval) = self.get_current_interval() {
             let duration = SystemTime::now().duration_since(interval.start).unwrap();
             Some(duration)
@@ -86,7 +86,10 @@ impl App {
             .last()
     }
 
-    pub fn get_total_duration(&self, interval_type: IntervalType) -> Option<Duration> {
+    pub fn get_interval_type_total_duration(
+        &self,
+        interval_type: IntervalType,
+    ) -> Option<Duration> {
         if let Some(intervals) = self.intervals_by_type.get(&interval_type) {
             let total_duration = intervals.iter().fold(Duration::ZERO, |total, interval| {
                 let interval_end = interval.end.unwrap_or(SystemTime::now());
@@ -141,6 +144,8 @@ enum IntervalType {
 
 #[cfg(test)]
 mod tests {
+    use std::ops::Add;
+
     use super::*;
 
     mod pause {
@@ -150,13 +155,13 @@ mod tests {
         fn resets_current_duration() {
             let mut app = App::new();
             app.start();
-            thread::sleep(Duration::from_millis(20));
+            thread::sleep(Duration::from_millis(50));
             app.pause();
             app.start();
-            thread::sleep(Duration::from_millis(10));
-            let duration = app.get_interval_duration().unwrap();
+            thread::sleep(Duration::from_millis(25));
+            let duration = app.get_current_interval_duration().unwrap();
             assert!(
-                duration.le(&Duration::from_millis(20)) && duration.gt(&Duration::from_millis(0))
+                duration.le(&Duration::from_millis(50)) && duration.gt(&Duration::from_millis(10))
             );
         }
 
@@ -166,11 +171,13 @@ mod tests {
             app.start();
             thread::sleep(Duration::from_millis(20));
             app.pause();
-            let duration_before_pause: Duration =
-                app.get_total_duration(IntervalType::Focus).unwrap();
+            let duration_before_pause: Duration = app
+                .get_interval_type_total_duration(IntervalType::Focus)
+                .unwrap();
             thread::sleep(Duration::from_millis(20));
-            let duration_after_pause: Duration =
-                app.get_total_duration(IntervalType::Focus).unwrap();
+            let duration_after_pause: Duration = app
+                .get_interval_type_total_duration(IntervalType::Focus)
+                .unwrap();
             assert_eq!(duration_before_pause, duration_after_pause);
         }
 
@@ -180,27 +187,46 @@ mod tests {
             app.start();
             thread::sleep(Duration::from_millis(20));
             app.pause();
-            let duration_after_session_1: Duration =
-                app.get_total_duration(IntervalType::Focus).unwrap();
+            let duration_after_session_1: Duration = app
+                .get_interval_type_total_duration(IntervalType::Focus)
+                .unwrap();
             thread::sleep(Duration::from_millis(20));
-            dbg!(duration_after_session_1);
             app.start();
             thread::sleep(Duration::from_millis(20));
             app.pause();
-            let duration_after_session_2: Duration =
-                app.get_total_duration(IntervalType::Focus).unwrap();
+            let duration_after_session_2: Duration = app
+                .get_interval_type_total_duration(IntervalType::Focus)
+                .unwrap();
             assert!(duration_after_session_2.gt(&duration_after_session_1));
-            dbg!(duration_after_session_2);
         }
     }
 
     #[test]
     fn changing_interval_type_resets_current_duration() {
-        todo!()
+        let mut app = App::new();
+        app.start();
+        thread::sleep(Duration::from_millis(20));
+        let focus_duration = app.get_current_interval_duration().unwrap();
+        app.change_interval_type(IntervalType::Rest);
+        thread::sleep(Duration::from_millis(20));
+        let rest_duration = app.get_current_interval_duration().unwrap();
+        assert!(focus_duration.le(&Duration::from_millis(40)));
+        assert!(rest_duration.le(&Duration::from_millis(40)));
     }
 
     #[test]
     fn get_total_duration_totals_interval_durations() {
-        todo!()
+        let mut app = App::new();
+        app.start();
+        thread::sleep(Duration::from_millis(20));
+        let duration_1 = app.get_current_interval_duration().unwrap();
+        app.pause();
+        app.start();
+        thread::sleep(Duration::from_millis(20));
+        let duration_2 = app.get_current_interval_duration().unwrap();
+        let total_duration = app
+            .get_interval_type_total_duration(IntervalType::Focus)
+            .unwrap();
+        assert!(total_duration.gt(&duration_1.add(duration_2)));
     }
 }
