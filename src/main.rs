@@ -65,7 +65,8 @@ impl App {
 
     pub fn get_current_interval_duration(&self) -> Option<Duration> {
         if let Some(interval) = self.get_current_interval() {
-            let duration = SystemTime::now().duration_since(interval.start).unwrap();
+            let interval_end = interval.end.unwrap_or(SystemTime::now());
+            let duration = interval_end.duration_since(interval.start).unwrap();
             Some(duration)
         } else {
             None
@@ -148,57 +149,53 @@ mod tests {
 
     use super::*;
 
-    mod pause {
-        use super::*;
+    #[test]
+    fn duration_increases() {
+        let mut app = App::new();
+        app.start();
+        thread::sleep(Duration::from_millis(20));
+        let duration = app.get_current_interval_duration().unwrap();
+        assert!(duration.gt(&Duration::from_millis(0)));
+    }
 
-        #[test]
-        fn resets_current_duration() {
-            let mut app = App::new();
-            app.start();
-            thread::sleep(Duration::from_millis(50));
-            app.pause();
-            app.start();
-            thread::sleep(Duration::from_millis(25));
-            let duration = app.get_current_interval_duration().unwrap();
-            assert!(
-                duration.le(&Duration::from_millis(50)) && duration.gt(&Duration::from_millis(10))
-            );
-        }
+    #[test]
+    fn pause_stops_duration_from_increasing() {
+        let mut app = App::new();
+        app.start();
+        thread::sleep(Duration::from_millis(20));
+        app.pause();
+        let duration_before_pause: Duration = app.get_current_interval_duration().unwrap();
+        thread::sleep(Duration::from_millis(100));
+        let duration_after_pause: Duration = app.get_current_interval_duration().unwrap();
+        assert_eq!(duration_before_pause, duration_after_pause);
+    }
 
-        #[test]
-        fn stops_total_duration_from_increasing() {
-            let mut app = App::new();
-            app.start();
-            thread::sleep(Duration::from_millis(20));
-            app.pause();
-            let duration_before_pause: Duration = app
-                .get_interval_type_total_duration(IntervalType::Focus)
-                .unwrap();
-            thread::sleep(Duration::from_millis(20));
-            let duration_after_pause: Duration = app
-                .get_interval_type_total_duration(IntervalType::Focus)
-                .unwrap();
-            assert_eq!(duration_before_pause, duration_after_pause);
-        }
+    #[test]
+    fn pause_resets_current_duration() {
+        let mut app = App::new();
+        app.start();
+        thread::sleep(Duration::from_millis(50));
+        app.pause();
+        app.start();
+        thread::sleep(Duration::from_millis(25));
+        let duration = app.get_current_interval_duration().unwrap();
+        assert!(duration.le(&Duration::from_millis(50)) && duration.gt(&Duration::from_millis(10)));
+    }
 
-        #[test]
-        fn stops_total_duration_from_increasing_only_during_pause() {
-            let mut app = App::new();
-            app.start();
-            thread::sleep(Duration::from_millis(20));
-            app.pause();
-            let duration_after_session_1: Duration = app
-                .get_interval_type_total_duration(IntervalType::Focus)
-                .unwrap();
-            thread::sleep(Duration::from_millis(20));
-            app.start();
-            thread::sleep(Duration::from_millis(20));
-            app.pause();
-            let duration_after_session_2: Duration = app
-                .get_interval_type_total_duration(IntervalType::Focus)
-                .unwrap();
-            assert!(duration_after_session_2.gt(&duration_after_session_1));
-        }
+    #[test]
+    fn total_duration_adds_up_interval_durations() {
+        let mut app = App::new();
+        app.start();
+        thread::sleep(Duration::from_millis(20));
+        let duration_1 = app.get_current_interval_duration().unwrap();
+        app.pause();
+        app.start();
+        thread::sleep(Duration::from_millis(20));
+        let duration_2 = app.get_current_interval_duration().unwrap();
+        let total_duration = app
+            .get_interval_type_total_duration(IntervalType::Focus)
+            .unwrap();
+        assert!(total_duration.gt(&duration_1.add(duration_2)));
     }
 
     #[test]
@@ -212,21 +209,5 @@ mod tests {
         let rest_duration = app.get_current_interval_duration().unwrap();
         assert!(focus_duration.le(&Duration::from_millis(40)));
         assert!(rest_duration.le(&Duration::from_millis(40)));
-    }
-
-    #[test]
-    fn get_total_duration_totals_interval_durations() {
-        let mut app = App::new();
-        app.start();
-        thread::sleep(Duration::from_millis(20));
-        let duration_1 = app.get_current_interval_duration().unwrap();
-        app.pause();
-        app.start();
-        thread::sleep(Duration::from_millis(20));
-        let duration_2 = app.get_current_interval_duration().unwrap();
-        let total_duration = app
-            .get_interval_type_total_duration(IntervalType::Focus)
-            .unwrap();
-        assert!(total_duration.gt(&duration_1.add(duration_2)));
     }
 }
