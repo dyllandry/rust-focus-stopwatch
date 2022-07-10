@@ -150,7 +150,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn duration_increases() {
+    fn stopwatch_duration_increases_over_time() {
         let mut app = App::new();
         app.start();
         thread::sleep(Duration::from_millis(20));
@@ -164,14 +164,14 @@ mod tests {
         app.start();
         thread::sleep(Duration::from_millis(20));
         app.pause();
-        let duration_before_pause: Duration = app.get_current_interval_duration().unwrap();
+        let duration_at_pause: Duration = app.get_current_interval_duration().unwrap();
         thread::sleep(Duration::from_millis(100));
-        let duration_after_pause: Duration = app.get_current_interval_duration().unwrap();
-        assert_eq!(duration_before_pause, duration_after_pause);
+        let duration_after_waiting: Duration = app.get_current_interval_duration().unwrap();
+        assert_eq!(duration_at_pause, duration_after_waiting);
     }
 
     #[test]
-    fn pause_resets_current_duration() {
+    fn pause_creates_new_interval() {
         let mut app = App::new();
         app.start();
         thread::sleep(Duration::from_millis(50));
@@ -183,7 +183,7 @@ mod tests {
     }
 
     #[test]
-    fn total_duration_adds_up_interval_durations() {
+    fn total_duration_equals_all_intervals() {
         let mut app = App::new();
         app.start();
         thread::sleep(Duration::from_millis(20));
@@ -199,7 +199,7 @@ mod tests {
     }
 
     #[test]
-    fn changing_interval_type_resets_current_duration() {
+    fn changing_interval_type_creates_new_interval() {
         let mut app = App::new();
         app.start();
         thread::sleep(Duration::from_millis(20));
