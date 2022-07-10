@@ -6,5 +6,9 @@ It is technically an "interval", but it is also a session.
 Interval: a time between events.
 Session: a period devoted to a particular activity
 Yeah, I think I want to use words that also have added business meaning. So "session" instead of just "interval".
-- [ ] change "interval" to "session"
-- [ ] change "focus" to "work"
+✔ change "interval" to "session" @done(22-07-10 11:20)
+☐ change "focus" to "work"
+
+Long-term:
+    - Be able to create your own "modes".
+        Like have session types for "development", "PR review", "jira", etc.
