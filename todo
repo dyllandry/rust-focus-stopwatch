@@ -10,8 +10,8 @@ Immediate stuff:
     ✘ change "focus" to "work" @cancelled(22-07-10 11:33)
         Was going to do this because when describing the idea to Vicky I kept saying I "worked" instead of I "focused".
         But I'd like this to be a "focus stopwatch" not a "work stopwatch".
-    ☐ implement basic crossterm
-    ☐ implement basic tui-rs
+    ✔ implement basic tui-rs @done(22-07-10 12:15)
+    ☐ add an event loop that can be exited
 
 Long-term:
     - Be able to create your own "modes".
