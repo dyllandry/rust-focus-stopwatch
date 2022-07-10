@@ -1,0 +1,10 @@
+While explaining this to Vicky, instead of saying "interval", I was saying "session".
+And instead of "focus" I was saying "work", as this tool is to help me *work* for the right time.
+Maybe that means I should change the words I used in the technical implementation.
+But maybe the words used in the technical implementation don't have to match how I describe it.
+It is technically an "interval", but it is also a session.
+Interval: a time between events.
+Session: a period devoted to a particular activity
+Yeah, I think I want to use words that also have added business meaning. So "session" instead of just "interval".
+- [ ] change "interval" to "session"
+- [ ] change "focus" to "work"
