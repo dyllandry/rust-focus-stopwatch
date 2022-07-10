@@ -1,14 +1,24 @@
-While explaining this to Vicky, instead of saying "interval", I was saying "session".
-And instead of "focus" I was saying "work", as this tool is to help me *work* for the right time.
-Maybe that means I should change the words I used in the technical implementation.
-But maybe the words used in the technical implementation don't have to match how I describe it.
-It is technically an "interval", but it is also a session.
-Interval: a time between events.
-Session: a period devoted to a particular activity
-Yeah, I think I want to use words that also have added business meaning. So "session" instead of just "interval".
-✔ change "interval" to "session" @done(22-07-10 11:20)
-☐ change "focus" to "work"
+Immediate stuff:
+    ✔ change "interval" to "session" @done(22-07-10 11:20)
+        While explaining this to Vicky, instead of saying "interval", I was saying "session".
+        Maybe that means I should change the words I used in the technical implementation.
+        But maybe the words used in the technical implementation don't have to match how I describe it.
+        It is technically an "interval", but it is also a session.
+        Interval: a time between events.
+        Session: a period devoted to a particular activity
+        Yeah, I think I want to use words that also have added business meaning. So "session" instead of just "interval".
+    ✘ change "focus" to "work" @cancelled(22-07-10 11:33)
+        Was going to do this because when describing the idea to Vicky I kept saying I "worked" instead of I "focused".
+        But I'd like this to be a "focus stopwatch" not a "work stopwatch".
+    ☐ implement basic crossterm
+    ☐ implement basic tui-rs
 
 Long-term:
     - Be able to create your own "modes".
         Like have session types for "development", "PR review", "jira", etc.
+        Accept string input from user, use as key in sessions_by_type.
+        This will require a UI.
+            Could do a TUI with tui-rs https://github.com/fdehau/tui-rs
+                Only handles visuals, needs other for input
+                    Works well with crossterm out of the box https://github.com/crossterm-rs/crossterm
+            
