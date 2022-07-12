@@ -11,7 +11,12 @@ Immediate stuff:
         Was going to do this because when describing the idea to Vicky I kept saying I "worked" instead of I "focused".
         But I'd like this to be a "focus stopwatch" not a "work stopwatch".
     ✔ implement basic tui-rs @done(22-07-10 12:15)
-    ☐ add an event loop that can be exited
+    ✔ add an event loop that can be exited to end program @done(22-07-11 20:32)
+        Crossterm has an event poll read example https://github.com/crossterm-rs/crossterm/blob/master/examples/event-poll-read.rs
+        Could poll for 15 ms.
+            If no event, redraw
+            if event, process event, redraw
+    ☐ draw basic static ui in draw_ui
 
 Long-term:
     - Be able to create your own "modes".

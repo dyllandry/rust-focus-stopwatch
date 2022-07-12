@@ -1,15 +1,17 @@
 // Stopwatch deps
 use std::{
     collections::HashMap,
+    io::stdout,
     thread,
     time::{self, Duration, SystemTime},
 };
 
 // tui-rs deps
 use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+    event::{self, poll, read, Event, KeyCode},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    Result,
 };
 use std::io;
 use tui::{
@@ -19,34 +21,40 @@ use tui::{
     Terminal,
 };
 
-fn main() -> Result<(), io::Error> {
-    // setup terminal
-    enable_raw_mode()?;
-    let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
+const HELP: &str = r#"Blocking poll() & non-blocking read()
+ - Keyboard, and terminal resize events enabled
+ - Prints "." every second if there's no event
+ - Hit "c" to print current cursor position
+ - Use Esc to quit
+"#;
 
-    terminal.draw(|f| {
-        let size = f.size();
-        let block = Block::default()
-            .title("Focus Stopwatch")
-            .borders(Borders::ALL);
-        f.render_widget(block, size);
-    })?;
-
-    thread::sleep(Duration::from_millis(5000));
-
-    // restore terminal
-    disable_raw_mode()?;
-    execute!(
-        terminal.backend_mut(),
-        LeaveAlternateScreen,
-        DisableMouseCapture
-    )?;
-    terminal.show_cursor()?;
-
+fn start_main_loop() -> Result<()> {
+    loop {
+        if poll(Duration::from_millis(100))? {
+            let event = read()?;
+            println!("Event::{:?}\r", event);
+            if event == Event::Key(KeyCode::Esc.into()) {
+                break;
+            }
+        }
+        draw_ui();
+    }
     Ok(())
+}
+
+// I think I'll pass in a reference to some app state.
+fn draw_ui() {}
+
+fn main() -> Result<()> {
+    println!("{}", HELP);
+
+    enable_raw_mode()?;
+
+    if let Err(e) = start_main_loop() {
+        println!("Error: {:?}\r", e);
+    }
+
+    disable_raw_mode()
 }
 
 struct App {
