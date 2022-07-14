@@ -1,7 +1,7 @@
 // Stopwatch deps
 use std::{
     collections::HashMap,
-    io::stdout,
+    io::{stdout, Stdout},
     thread,
     time::{self, Duration, SystemTime},
 };
@@ -17,37 +17,99 @@ use std::io;
 use tui::{
     backend::CrosstermBackend,
     layout::{Constraint, Direction, Layout},
-    widgets::{Block, Borders, Widget},
+    text::{Span, Spans},
+    widgets::{Block, Borders, Paragraph, Widget},
     Terminal,
 };
 
-const HELP: &str = r#"Blocking poll() & non-blocking read()
- - Keyboard, and terminal resize events enabled
- - Prints "." every second if there's no event
- - Hit "c" to print current cursor position
- - Use Esc to quit
-"#;
+type StandardTerminal = Terminal<CrosstermBackend<Stdout>>;
 
 fn start_main_loop() -> Result<()> {
+    let mut stdout = io::stdout();
+    execute!(stdout, EnterAlternateScreen)?;
+    let backend = CrosstermBackend::new(stdout);
+    let mut terminal = Terminal::new(backend)?;
+
     loop {
         if poll(Duration::from_millis(100))? {
             let event = read()?;
-            println!("Event::{:?}\r", event);
+
             if event == Event::Key(KeyCode::Esc.into()) {
                 break;
             }
         }
-        draw_ui();
+
+        draw_ui(&mut terminal)?;
     }
+
     Ok(())
 }
 
-// I think I'll pass in a reference to some app state.
-fn draw_ui() {}
+// I think I'll pass in a reference to some app state eventually.
+fn draw_ui(terminal: &mut StandardTerminal) -> Result<()> {
+    terminal.draw(|f| {
+        let parent_vertical_layout = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Percentage(30),
+                Constraint::Percentage(30),
+                Constraint::Percentage(40),
+            ])
+            .split(f.size());
+
+        let session_totals_layout = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+            .split(parent_vertical_layout[0]);
+
+        let focus_total_block = Block::default()
+            .title(format!("Focus (Active)"))
+            .borders(Borders::ALL);
+        let focus_total_block_inner = focus_total_block.inner(session_totals_layout[0]);
+        let focus_total_text = vec![Spans::from(vec![Span::raw("Total time 00:15:32")])];
+        let focus_total_paragraph = Paragraph::new(focus_total_text);
+
+        let rest_total_block = Block::default()
+            .title(format!("Rest"))
+            .borders(Borders::ALL);
+        let rest_total_block_inner = rest_total_block.inner(session_totals_layout[1]);
+        let rest_total_text = vec![Spans::from(vec![Span::raw("Total time 00:02:00")])];
+        let rest_total_paragraph = Paragraph::new(rest_total_text);
+
+        let current_session_block = Block::default()
+            .title(format!("Current Session (Focus)"))
+            .borders(Borders::ALL);
+        let current_session_block_inner = current_session_block.inner(parent_vertical_layout[1]);
+        let current_session_text = vec![Spans::from(vec![Span::raw("Time 00:03:32")])];
+        let current_session_paragraph = Paragraph::new(current_session_text);
+
+        let help_block = Block::default();
+        let help_block_inner = help_block.inner(parent_vertical_layout[2]);
+        let help_text = vec![
+            Spans::from(vec![Span::raw("Press F to enter focus")]),
+            Spans::from(vec![Span::raw("Press R to enter rest")]),
+            Spans::from(vec![Span::raw("Press P to toggle pause")]),
+        ];
+        let help_paragraph = Paragraph::new(help_text);
+
+        // RENDERING
+        f.render_widget(focus_total_block, session_totals_layout[0]);
+        f.render_widget(focus_total_paragraph, focus_total_block_inner);
+
+        f.render_widget(rest_total_block, session_totals_layout[1]);
+        f.render_widget(rest_total_paragraph, rest_total_block_inner);
+
+        f.render_widget(current_session_block, parent_vertical_layout[1]);
+        f.render_widget(current_session_paragraph, current_session_block_inner);
+
+        f.render_widget(help_block, parent_vertical_layout[2]);
+        f.render_widget(help_paragraph, help_block_inner);
+    })?;
+
+    Ok(())
+}
 
 fn main() -> Result<()> {
-    println!("{}", HELP);
-
     enable_raw_mode()?;
 
     if let Err(e) = start_main_loop() {

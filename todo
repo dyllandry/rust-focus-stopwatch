@@ -16,7 +16,8 @@ Immediate stuff:
         Could poll for 15 ms.
             If no event, redraw
             if event, process event, redraw
-    ☐ draw basic static ui in draw_ui
+    ✔ draw basic static ui in draw_ui @done(22-07-14 21:19)
+    ☐ show incrementing current session time
 
 Long-term:
     - Be able to create your own "modes".
