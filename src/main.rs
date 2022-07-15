@@ -25,10 +25,10 @@ use tui::{
 type StandardTerminal = Terminal<CrosstermBackend<Stdout>>;
 
 fn start_main_loop() -> Result<()> {
-    let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen)?;
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
+    let mut terminal = setup_terminal()?;
+
+    let mut app = App::new();
+    app.start();
 
     loop {
         if poll(Duration::from_millis(100))? {
@@ -39,14 +39,29 @@ fn start_main_loop() -> Result<()> {
             }
         }
 
-        draw_ui(&mut terminal)?;
+        draw_ui(&mut terminal, &app)?;
     }
+
+    teardown_terminal()?;
 
     Ok(())
 }
 
-// I think I'll pass in a reference to some app state eventually.
-fn draw_ui(terminal: &mut StandardTerminal) -> Result<()> {
+fn teardown_terminal() -> Result<()> {
+    disable_raw_mode()?;
+    Ok(())
+}
+
+fn setup_terminal() -> Result<StandardTerminal> {
+    enable_raw_mode()?;
+    let mut stdout = io::stdout();
+    execute!(stdout, EnterAlternateScreen)?;
+    let backend = CrosstermBackend::new(stdout);
+    let terminal = Terminal::new(backend)?;
+    Ok(terminal)
+}
+
+fn draw_ui(terminal: &mut StandardTerminal, app: &App) -> Result<()> {
     terminal.draw(|f| {
         let parent_vertical_layout = Layout::default()
             .direction(Direction::Vertical)
@@ -66,21 +81,35 @@ fn draw_ui(terminal: &mut StandardTerminal) -> Result<()> {
             .title(format!("Focus (Active)"))
             .borders(Borders::ALL);
         let focus_total_block_inner = focus_total_block.inner(session_totals_layout[0]);
-        let focus_total_text = vec![Spans::from(vec![Span::raw("Total time 00:15:32")])];
+        let focus_total_duration = app.get_session_type_total_duration(SessionType::Focus);
+        let focus_total_duration_formatted = format_duration(focus_total_duration);
+        let focus_total_text = vec![Spans::from(vec![Span::raw(format!(
+            "Total time: {}",
+            focus_total_duration_formatted
+        ))])];
         let focus_total_paragraph = Paragraph::new(focus_total_text);
 
         let rest_total_block = Block::default()
             .title(format!("Rest"))
             .borders(Borders::ALL);
         let rest_total_block_inner = rest_total_block.inner(session_totals_layout[1]);
-        let rest_total_text = vec![Spans::from(vec![Span::raw("Total time 00:02:00")])];
+        let rest_total_duration = app.get_session_type_total_duration(SessionType::Rest);
+        let rest_total_duration_formatted = format_duration(rest_total_duration);
+        let rest_total_text = vec![Spans::from(vec![Span::raw(format!(
+            "Total time {}",
+            rest_total_duration_formatted
+        ))])];
         let rest_total_paragraph = Paragraph::new(rest_total_text);
 
         let current_session_block = Block::default()
             .title(format!("Current Session (Focus)"))
             .borders(Borders::ALL);
         let current_session_block_inner = current_session_block.inner(parent_vertical_layout[1]);
-        let current_session_text = vec![Spans::from(vec![Span::raw("Time 00:03:32")])];
+        let current_session_duration = app.get_current_session_duration();
+        let current_session_duration_formatted = format_duration(current_session_duration);
+        let current_session_text = vec![Spans::from(vec![Span::raw(
+            current_session_duration_formatted,
+        )])];
         let current_session_paragraph = Paragraph::new(current_session_text);
 
         let help_block = Block::default();
@@ -109,14 +138,30 @@ fn draw_ui(terminal: &mut StandardTerminal) -> Result<()> {
     Ok(())
 }
 
-fn main() -> Result<()> {
-    enable_raw_mode()?;
+fn format_duration(duration: Option<Duration>) -> String {
+    if let Some(duration) = duration {
+        let seconds = two_digit_string(duration.as_secs() % 60);
+        let minutes = two_digit_string((duration.as_secs() / 60) % 60);
+        let hours = two_digit_string((duration.as_secs() / 60) / 60);
+        format!("{}:{}:{}", hours, minutes, seconds)
+    } else {
+        "00:00:00".to_string()
+    }
+}
 
+fn two_digit_string(number: u64) -> String {
+    let number = number.to_string();
+    if number.len() < 2 {
+        format!("0{}", number)
+    } else {
+        number
+    }
+}
+
+fn main() {
     if let Err(e) = start_main_loop() {
         println!("Error: {:?}\r", e);
     }
-
-    disable_raw_mode()
 }
 
 struct App {

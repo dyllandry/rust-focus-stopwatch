@@ -17,7 +17,10 @@ Immediate stuff:
             If no event, redraw
             if event, process event, redraw
     ✔ draw basic static ui in draw_ui @done(22-07-14 21:19)
-    ☐ show incrementing current session time
+    ✔ show incrementing current session time @done(22-07-14 22:31)
+    ☐ let user enter rest/focus mode
+    ☐ let user pause
+    ☐ make session totals "(Active)" label and current session "(Focus/Rest)" labels update
 
 Long-term:
     - Be able to create your own "modes".
@@ -27,4 +30,12 @@ Long-term:
             Could do a TUI with tui-rs https://github.com/fdehau/tui-rs
                 Only handles visuals, needs other for input
                     Works well with crossterm out of the box https://github.com/crossterm-rs/crossterm
+    - autosaving
+        Could turn on autosaving
+        Provide a save file location
+        Begins automatically saving the current "stopwatch" to that file and ids it with today's date.
+            "2022-07-14.stopwatch" and if duplicates "2022-07-14_2.stopwatch"
+            Serialized representation of session types & their sessions
+            Will have to end last session so its endtime isn't dangling in case file is resumed.
+        Optionally load a stopwatch from file at start.
             
