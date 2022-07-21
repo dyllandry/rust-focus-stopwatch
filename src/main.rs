@@ -34,8 +34,16 @@ fn start_main_loop() -> Result<()> {
         if poll(Duration::from_millis(100))? {
             let event = read()?;
 
-            if event == Event::Key(KeyCode::Esc.into()) {
+            let escape = Event::Key(KeyCode::Esc.into());
+            let rest = Event::Key(KeyCode::Char('r').into());
+            let focus = Event::Key(KeyCode::Char('f').into());
+
+            if event == escape {
                 break;
+            } else if event == rest {
+                app.change_session_type(SessionType::Rest);
+            } else if event == focus {
+                app.change_session_type(SessionType::Focus);
             }
         }
 
@@ -177,29 +185,21 @@ impl App {
 
     pub fn start(&mut self) {
         self.paused = false;
-        let sessions = self
-            .sessions_by_type
-            .get_mut(&self.current_session_type)
-            .unwrap();
-        sessions.push(Session::new());
+        self.start_new_session(self.current_session_type);
     }
 
     pub fn pause(&mut self) {
         self.paused = true;
-        if let Some(session) = self.get_current_session_mut() {
-            session.end = Some(SystemTime::now());
-        }
+        self.end_current_session();
     }
 
     pub fn change_session_type(&mut self, session_type: SessionType) {
-        if let Some(session) = self.get_current_session_mut() {
-            session.end = Some(SystemTime::now());
+        if self.current_session_type == session_type {
+            return;
         }
-        self.current_session_type = session_type;
-        self.sessions_by_type
-            .get_mut(&self.current_session_type)
-            .unwrap()
-            .push(Session::new());
+
+        self.end_current_session();
+        self.start_new_session(session_type);
     }
 
     pub fn get_current_session_duration(&self) -> Option<Duration> {
@@ -209,6 +209,31 @@ impl App {
             Some(duration)
         } else {
             None
+        }
+    }
+
+    pub fn get_session_type_total_duration(&self, session_type: SessionType) -> Option<Duration> {
+        if let Some(sessions) = self.sessions_by_type.get(&session_type) {
+            let total_duration = sessions.iter().fold(Duration::ZERO, |total, session| {
+                let session_end = session.end.unwrap_or(SystemTime::now());
+                let session_duration = session_end.duration_since(session.start).unwrap();
+                total + session_duration
+            });
+            Some(total_duration)
+        } else {
+            None
+        }
+    }
+
+    fn start_new_session(&mut self, new_session_type: SessionType) {
+        self.current_session_type = new_session_type;
+        let sessions = self.sessions_by_type.get_mut(&new_session_type).unwrap();
+        sessions.push(Session::new());
+    }
+
+    fn end_current_session(&mut self) {
+        if let Some(session) = self.get_current_session_mut() {
+            session.end = Some(SystemTime::now());
         }
     }
 
@@ -224,19 +249,6 @@ impl App {
             .get(&self.current_session_type)
             .unwrap()
             .last()
-    }
-
-    pub fn get_session_type_total_duration(&self, session_type: SessionType) -> Option<Duration> {
-        if let Some(sessions) = self.sessions_by_type.get(&session_type) {
-            let total_duration = sessions.iter().fold(Duration::ZERO, |total, session| {
-                let session_end = session.end.unwrap_or(SystemTime::now());
-                let session_duration = session_end.duration_since(session.start).unwrap();
-                total + session_duration
-            });
-            Some(total_duration)
-        } else {
-            None
-        }
     }
 }
 
@@ -273,7 +285,7 @@ impl Default for Session {
     }
 }
 
-#[derive(Eq, Hash, PartialEq)]
+#[derive(Eq, Hash, PartialEq, Clone, Copy)]
 enum SessionType {
     Focus,
     Rest,
