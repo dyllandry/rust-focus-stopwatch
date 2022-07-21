@@ -196,6 +196,9 @@ impl App {
     }
 
     pub fn start(&mut self) {
+        if !self.paused {
+            return;
+        }
         self.paused = false;
         self.start_new_session(self.current_session_type);
     }
