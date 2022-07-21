@@ -93,7 +93,7 @@ fn draw_ui(terminal: &mut StandardTerminal, app: &App) -> Result<()> {
                 "Focus (Active)"
             } else {
                 "Focus"
-        };
+            };
 
         let focus_total_block = Block::default()
             .title(focus_total_block_title)
@@ -129,8 +129,8 @@ fn draw_ui(terminal: &mut StandardTerminal, app: &App) -> Result<()> {
             "Current Session (Paused)"
         } else {
             match app.current_session_type {
-            SessionType::Focus => "Current Session (Focus)",
-            SessionType::Rest => "Current Session (Rest)",
+                SessionType::Focus => "Current Session (Focus)",
+                SessionType::Rest => "Current Session (Rest)",
             }
         };
         let current_session_block = Block::default()
@@ -276,7 +276,7 @@ impl App {
     fn end_current_session(&mut self) {
         if let Some(session) = self.get_current_session_mut() {
             if session.end.is_none() {
-            session.end = Some(SystemTime::now());
+                session.end = Some(SystemTime::now());
             }
         }
     }
