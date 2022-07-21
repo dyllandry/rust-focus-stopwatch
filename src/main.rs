@@ -85,8 +85,12 @@ fn draw_ui(terminal: &mut StandardTerminal, app: &App) -> Result<()> {
             .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
             .split(parent_vertical_layout[0]);
 
+        let focus_total_block_title = match app.current_session_type {
+            SessionType::Focus => "Focus (Active)",
+            _ => "Focus",
+        };
         let focus_total_block = Block::default()
-            .title(format!("Focus (Active)"))
+            .title(focus_total_block_title)
             .borders(Borders::ALL);
         let focus_total_block_inner = focus_total_block.inner(session_totals_layout[0]);
         let focus_total_duration = app.get_session_type_total_duration(SessionType::Focus);
@@ -97,8 +101,12 @@ fn draw_ui(terminal: &mut StandardTerminal, app: &App) -> Result<()> {
         ))])];
         let focus_total_paragraph = Paragraph::new(focus_total_text);
 
+        let rest_total_block_title = match app.current_session_type {
+            SessionType::Rest => "Rest (Active)",
+            _ => "Rest",
+        };
         let rest_total_block = Block::default()
-            .title(format!("Rest"))
+            .title(rest_total_block_title)
             .borders(Borders::ALL);
         let rest_total_block_inner = rest_total_block.inner(session_totals_layout[1]);
         let rest_total_duration = app.get_session_type_total_duration(SessionType::Rest);
@@ -109,8 +117,12 @@ fn draw_ui(terminal: &mut StandardTerminal, app: &App) -> Result<()> {
         ))])];
         let rest_total_paragraph = Paragraph::new(rest_total_text);
 
+        let current_session_block_title = match app.current_session_type {
+            SessionType::Focus => "Current Session (Focus)",
+            SessionType::Rest => "Current Session (Rest)",
+        };
         let current_session_block = Block::default()
-            .title(format!("Current Session (Focus)"))
+            .title(current_session_block_title)
             .borders(Borders::ALL);
         let current_session_block_inner = current_session_block.inner(parent_vertical_layout[1]);
         let current_session_duration = app.get_current_session_duration();
