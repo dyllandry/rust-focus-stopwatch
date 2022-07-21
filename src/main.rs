@@ -252,7 +252,9 @@ impl App {
 
     fn end_current_session(&mut self) {
         if let Some(session) = self.get_current_session_mut() {
+            if session.end.is_none() {
             session.end = Some(SystemTime::now());
+            }
         }
     }
 
