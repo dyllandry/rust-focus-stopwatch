@@ -209,6 +209,10 @@ impl App {
     }
 
     pub fn change_session_type(&mut self, session_type: SessionType) {
+        if self.paused {
+            self.start();
+        }
+
         if self.current_session_type == session_type {
             return;
         }
