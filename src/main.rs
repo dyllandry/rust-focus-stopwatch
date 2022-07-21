@@ -1,16 +1,15 @@
 // Stopwatch deps
 use std::{
     collections::HashMap,
-    io::{stdout, Stdout},
-    thread,
-    time::{self, Duration, SystemTime},
+    io::Stdout,
+    time::{Duration, SystemTime},
 };
 
 // tui-rs deps
 use crossterm::{
-    event::{self, poll, read, Event, KeyCode},
+    event::{poll, read, Event, KeyCode},
     execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen},
     Result,
 };
 use std::io;
@@ -18,7 +17,7 @@ use tui::{
     backend::CrosstermBackend,
     layout::{Constraint, Direction, Layout},
     text::{Span, Spans},
-    widgets::{Block, Borders, Paragraph, Widget},
+    widgets::{Block, Borders, Paragraph},
     Terminal,
 };
 
@@ -337,7 +336,7 @@ enum SessionType {
 
 #[cfg(test)]
 mod tests {
-    use std::ops::Add;
+    use std::{ops::Add, thread};
 
     use super::*;
 
