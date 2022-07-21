@@ -88,10 +88,13 @@ fn draw_ui(terminal: &mut StandardTerminal, app: &App) -> Result<()> {
             .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
             .split(parent_vertical_layout[0]);
 
-        let focus_total_block_title = match app.current_session_type {
-            SessionType::Focus => "Focus (Active)",
-            _ => "Focus",
+        let focus_total_block_title =
+            if !app.paused && app.current_session_type == SessionType::Focus {
+                "Focus (Active)"
+            } else {
+                "Focus"
         };
+
         let focus_total_block = Block::default()
             .title(focus_total_block_title)
             .borders(Borders::ALL);
@@ -104,9 +107,11 @@ fn draw_ui(terminal: &mut StandardTerminal, app: &App) -> Result<()> {
         ))])];
         let focus_total_paragraph = Paragraph::new(focus_total_text);
 
-        let rest_total_block_title = match app.current_session_type {
-            SessionType::Rest => "Rest (Active)",
-            _ => "Rest",
+        let rest_total_block_title = if !app.paused && app.current_session_type == SessionType::Rest
+        {
+            "Rest (Active)"
+        } else {
+            "Rest"
         };
         let rest_total_block = Block::default()
             .title(rest_total_block_title)
@@ -120,9 +125,13 @@ fn draw_ui(terminal: &mut StandardTerminal, app: &App) -> Result<()> {
         ))])];
         let rest_total_paragraph = Paragraph::new(rest_total_text);
 
-        let current_session_block_title = match app.current_session_type {
+        let current_session_block_title = if app.paused {
+            "Current Session (Paused)"
+        } else {
+            match app.current_session_type {
             SessionType::Focus => "Current Session (Focus)",
             SessionType::Rest => "Current Session (Rest)",
+            }
         };
         let current_session_block = Block::default()
             .title(current_session_block_title)
