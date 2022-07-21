@@ -37,6 +37,7 @@ fn start_main_loop() -> Result<()> {
             let escape = Event::Key(KeyCode::Esc.into());
             let rest = Event::Key(KeyCode::Char('r').into());
             let focus = Event::Key(KeyCode::Char('f').into());
+            let pause = Event::Key(KeyCode::Char('p').into());
 
             if event == escape {
                 break;
@@ -44,6 +45,8 @@ fn start_main_loop() -> Result<()> {
                 app.change_session_type(SessionType::Rest);
             } else if event == focus {
                 app.change_session_type(SessionType::Focus);
+            } else if event == pause {
+                app.toggle_pause();
             }
         }
 
