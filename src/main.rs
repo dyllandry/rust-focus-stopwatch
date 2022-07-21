@@ -211,6 +211,14 @@ impl App {
         self.end_current_session();
     }
 
+    pub fn toggle_pause(&mut self) {
+        if self.paused {
+            self.start();
+        } else {
+            self.pause()
+        }
+    }
+
     pub fn change_session_type(&mut self, session_type: SessionType) {
         if self.paused {
             self.start();
