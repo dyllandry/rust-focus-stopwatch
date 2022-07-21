@@ -201,6 +201,9 @@ impl App {
     }
 
     pub fn pause(&mut self) {
+        if self.paused {
+            return;
+        }
         self.paused = true;
         self.end_current_session();
     }
