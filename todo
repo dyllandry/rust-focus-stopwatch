@@ -20,7 +20,7 @@ Immediate stuff:
     ✔ show incrementing current session time @done(22-07-14 22:31)
     ✔ let user enter rest/focus mode @done(22-07-20 21:09)
     ✔ make session totals "(Active)" label and current session "(Focus/Rest)" labels update @done(22-07-20 21:30)
-    ☐ let user pause
+    ✔ let user pause @done(22-07-20 22:08)
     
 Long-term:
     - Be able to create your own "modes".
