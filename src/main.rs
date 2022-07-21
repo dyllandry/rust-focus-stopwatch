@@ -241,7 +241,7 @@ impl App {
         self.sessions_by_type
             .get_mut(&self.current_session_type)
             .unwrap()
-            .first_mut()
+            .last_mut()
     }
 
     fn get_current_session(&self) -> Option<&Session> {
