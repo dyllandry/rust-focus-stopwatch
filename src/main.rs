@@ -8,9 +8,8 @@ use std::{
 // tui-rs deps
 use crossterm::{
     event::{poll, read, Event, KeyCode},
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen},
-    Result,
+    terminal::{disable_raw_mode, enable_raw_mode, Clear, ClearType, EnterAlternateScreen},
+    ExecutableCommand, Result,
 };
 use std::io;
 use tui::{
@@ -65,7 +64,8 @@ fn teardown_terminal() -> Result<()> {
 fn setup_terminal() -> Result<StandardTerminal> {
     enable_raw_mode()?;
     let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen)?;
+    stdout.execute(EnterAlternateScreen)?;
+    stdout.execute(Clear(ClearType::All))?;
     let backend = CrosstermBackend::new(stdout);
     let terminal = Terminal::new(backend)?;
     Ok(terminal)
