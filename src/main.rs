@@ -149,6 +149,7 @@ fn draw_ui(terminal: &mut StandardTerminal, app: &App) -> Result<()> {
             Spans::from(vec![Span::raw("Press F to enter focus")]),
             Spans::from(vec![Span::raw("Press R to enter rest")]),
             Spans::from(vec![Span::raw("Press P to toggle pause")]),
+            Spans::from(vec![Span::raw("Press Esc to exit")]),
         ];
         let help_paragraph = Paragraph::new(help_text);
 
