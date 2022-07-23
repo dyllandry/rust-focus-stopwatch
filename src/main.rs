@@ -59,6 +59,7 @@ fn start_main_loop() -> Result<()> {
 fn teardown_terminal(mut terminal: StandardTerminal) -> Result<()> {
     let backend = terminal.backend_mut();
     backend.clear()?;
+    backend.set_cursor(0,0)?;
     disable_raw_mode()?;
     Ok(())
 }
