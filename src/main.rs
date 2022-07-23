@@ -13,7 +13,7 @@ use crossterm::{
 };
 use std::io;
 use tui::{
-    backend::CrosstermBackend,
+    backend::{Backend, CrosstermBackend},
     layout::{Constraint, Direction, Layout},
     text::{Span, Spans},
     widgets::{Block, Borders, Paragraph},
@@ -51,12 +51,14 @@ fn start_main_loop() -> Result<()> {
         draw_ui(&mut terminal, &app)?;
     }
 
-    teardown_terminal()?;
+    teardown_terminal(terminal)?;
 
     Ok(())
 }
 
-fn teardown_terminal() -> Result<()> {
+fn teardown_terminal(mut terminal: StandardTerminal) -> Result<()> {
+    let backend = terminal.backend_mut();
+    backend.clear()?;
     disable_raw_mode()?;
     Ok(())
 }

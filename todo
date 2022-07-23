@@ -21,7 +21,8 @@ Immediate stuff:
     ✔ let user enter rest/focus mode @done(22-07-20 21:09)
     ✔ make session totals "(Active)" label and current session "(Focus/Rest)" labels update @done(22-07-20 21:30)
     ✔ let user pause @done(22-07-20 22:08)
-    [ ] clear text on screen when app is closing 
+    [x] clear text on screen when app is closing @done(2022-07-23 15:20)
+    [ ] reset input to top of screen
 
 Bug-fix:
     ✔ stop text on screen from when before app starts from staying on screen when app is starting @done(22-07-23 14:58)
