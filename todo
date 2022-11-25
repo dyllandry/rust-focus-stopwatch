@@ -23,7 +23,12 @@ Immediate stuff:
     ✔ let user pause @done(22-07-20 22:08)
     ✔ clear text on screen when app is closing @done(2022-07-23 15:20)
     ✔ reset input to top of screen @done(2022-07-23 15:49)
-    [ ] make esc bring up a popup that says "Would you like to quit? Type 'yes' to quit or 'no' to cancel"
+    ☐ ~~make esc bring up a popup that says "Would you like to quit? Type 'yes' to quit or 'no' to cancel"~~
+        A lot of work.
+    ✔ make quiting require typing the word "quit" instead of just hitting the letter q @done(22-11-24 20:57)
+    ☐ refactor
+    ☐ be able to modify the current total times
+        useful for when you want to make corrections, like if you left it in rest mode by accident when you were actually focusing
 
 Bug-fix:
     ✔ stop text on screen from when before app starts from staying on screen when app is starting @done(22-07-23 14:58)

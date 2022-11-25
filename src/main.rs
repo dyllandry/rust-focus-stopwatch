@@ -28,23 +28,43 @@ fn start_main_loop() -> Result<()> {
     let mut app = App::new();
     app.start();
 
+    let enter_rest_mode = Event::Key(KeyCode::Char('r').into());
+    let enter_focus_mode = Event::Key(KeyCode::Char('f').into());
+    let pause = Event::Key(KeyCode::Char('p').into());
+    let quit_char_sequence = String::from("quit");
+    let mut previously_typed_characters = String::from("");
+
     loop {
         if poll(Duration::from_millis(100))? {
             let event = read()?;
 
-            let escape = Event::Key(KeyCode::Esc.into());
-            let rest = Event::Key(KeyCode::Char('r').into());
-            let focus = Event::Key(KeyCode::Char('f').into());
-            let pause = Event::Key(KeyCode::Char('p').into());
-
-            if event == escape {
-                break;
-            } else if event == rest {
+            if event == enter_rest_mode {
                 app.change_session_type(SessionType::Rest);
-            } else if event == focus {
+            } else if event == enter_focus_mode {
                 app.change_session_type(SessionType::Focus);
             } else if event == pause {
                 app.toggle_pause();
+            }
+
+            match event {
+                crossterm::event::Event::Key(key_event) => match key_event.code {
+                    crossterm::event::KeyCode::Char(char) => {
+                        previously_typed_characters.push(char);
+                        if previously_typed_characters.chars().count()
+                            > quit_char_sequence.chars().count()
+                        {
+                            previously_typed_characters =
+                                String::from(&previously_typed_characters[1..]);
+                        }
+                    }
+                    _ => (),
+                },
+                _ => (),
+            }
+
+            println!("{} == {}", previously_typed_characters, quit_char_sequence);
+            if previously_typed_characters == quit_char_sequence {
+                break;
             }
         }
 
@@ -59,7 +79,7 @@ fn start_main_loop() -> Result<()> {
 fn teardown_terminal(mut terminal: StandardTerminal) -> Result<()> {
     let backend = terminal.backend_mut();
     backend.clear()?;
-    backend.set_cursor(0,0)?;
+    backend.set_cursor(0, 0)?;
     disable_raw_mode()?;
     Ok(())
 }
@@ -152,7 +172,7 @@ fn draw_ui(terminal: &mut StandardTerminal, app: &App) -> Result<()> {
             Spans::from(vec![Span::raw("Press F to enter focus")]),
             Spans::from(vec![Span::raw("Press R to enter rest")]),
             Spans::from(vec![Span::raw("Press P to toggle pause")]),
-            Spans::from(vec![Span::raw("Press Esc to exit")]),
+            Spans::from(vec![Span::raw("Type \"quit\" to quit")]),
         ];
         let help_paragraph = Paragraph::new(help_text);
 
