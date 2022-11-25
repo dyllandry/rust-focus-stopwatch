@@ -22,15 +22,18 @@ use tui::{
 
 type StandardTerminal = Terminal<CrosstermBackend<Stdout>>;
 
+enum AppCommand {
+    EnterRestMode,
+    EnterFocusMode,
+    Pause,
+}
+
 fn start_main_loop() -> Result<()> {
     let mut terminal = setup_terminal()?;
 
     let mut app = App::new();
     app.start();
 
-    let enter_rest_mode = Event::Key(KeyCode::Char('r').into());
-    let enter_focus_mode = Event::Key(KeyCode::Char('f').into());
-    let pause = Event::Key(KeyCode::Char('p').into());
     let quit_char_sequence = String::from("quit");
     let mut previously_typed_characters = String::from("");
 
@@ -38,12 +41,12 @@ fn start_main_loop() -> Result<()> {
         if poll(Duration::from_millis(100))? {
             let event = read()?;
 
-            if event == enter_rest_mode {
-                app.change_session_type(SessionType::Rest);
-            } else if event == enter_focus_mode {
-                app.change_session_type(SessionType::Focus);
-            } else if event == pause {
-                app.toggle_pause();
+            if let Some(app_command) = get_app_command_from_event(&event) {
+                match app_command {
+                    AppCommand::EnterRestMode => app.change_session_type(SessionType::Rest),
+                    AppCommand::EnterFocusMode => app.change_session_type(SessionType::Focus),
+                    AppCommand::Pause => app.toggle_pause(),
+                }
             }
 
             if let Some(typed_char) = get_typed_char(&event) {
@@ -65,6 +68,21 @@ fn start_main_loop() -> Result<()> {
     teardown_terminal(terminal)?;
 
     Ok(())
+}
+
+fn get_app_command_from_event(event: &Event) -> Option<AppCommand> {
+    match event {
+        Event::Key(key_event) => match key_event.code {
+            KeyCode::Char(char) => match char {
+                'f' => Some(AppCommand::EnterFocusMode),
+                'r' => Some(AppCommand::EnterRestMode),
+                'p' => Some(AppCommand::Pause),
+                _ => None,
+            },
+            _ => None,
+        },
+        _ => None,
+    }
 }
 
 fn get_typed_char(event: &Event) -> Option<char> {
