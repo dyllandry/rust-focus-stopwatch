@@ -46,23 +46,14 @@ fn start_main_loop() -> Result<()> {
                 app.toggle_pause();
             }
 
-            match event {
-                crossterm::event::Event::Key(key_event) => match key_event.code {
-                    crossterm::event::KeyCode::Char(char) => {
-                        previously_typed_characters.push(char);
-                        if previously_typed_characters.chars().count()
-                            > quit_char_sequence.chars().count()
-                        {
-                            previously_typed_characters =
-                                String::from(&previously_typed_characters[1..]);
-                        }
-                    }
-                    _ => (),
-                },
-                _ => (),
+            if let Some(typed_char) = get_typed_char(&event) {
+                previously_typed_characters.push(typed_char);
+                if previously_typed_characters.chars().count() > quit_char_sequence.chars().count()
+                {
+                    previously_typed_characters = String::from(&previously_typed_characters[1..]);
+                }
             }
 
-            println!("{} == {}", previously_typed_characters, quit_char_sequence);
             if previously_typed_characters == quit_char_sequence {
                 break;
             }
@@ -74,6 +65,16 @@ fn start_main_loop() -> Result<()> {
     teardown_terminal(terminal)?;
 
     Ok(())
+}
+
+fn get_typed_char(event: &Event) -> Option<char> {
+    match event {
+        Event::Key(key_event) => match key_event.code {
+            KeyCode::Char(char) => Some(char),
+            _ => None,
+        },
+        _ => None,
+    }
 }
 
 fn teardown_terminal(mut terminal: StandardTerminal) -> Result<()> {
