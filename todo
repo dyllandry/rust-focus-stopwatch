@@ -28,6 +28,26 @@ Immediate stuff:
     ✔ make quiting require typing the word "quit" instead of just hitting the letter q @done(22-11-24 20:57)
     ☐ refactor AppCommand
         I think it would be cool if I could just send the AppCommand to the app and let the app handle it. I like how stuff outside the app turns the crossterm event into an appcommand, but I don't think stuff outside should be deciding what methods on the app to call depending on the appcommand. I think the app should be able to handle appcommands. Call it like fn do_app_command(command: AppCommand)
+    ☐ refactor previously_typed_chars
+        I'm not sure how I'd refactor this. I think I want to somehow end up with a an AppCommand::Quit. I dont want start_main_loop to be managing the length of the last typed characters and what not. Maybe have struct "MaxLenString" with an interface like .push(char) & .get() -> String. Then just have to create it, get typed char, push to max_len_string, then see if it's equal to another string. All this refactors though is managing the length of a string. Still have to collect the input, push, and check for equality.
+            Yo maybe I can have get_app_command_from_event return a function that has access to state which tracks last chars typed. Something like this
+                const get_app_command_from_event = () => {
+                    let last_chars_typed = "";
+                    return (event) => {
+                        last_chars_typed.push(event.char);
+                        if last_chars_typed == "quit" {
+                            return AppCommand::Quit
+                        }
+                    };
+                }
+                Though it is a little confusing for get_app_command_from_event to return a function that you then actually have to call to do the thing. But I'm pretty confident I can declare that last_chars_typed thing Just the closure would then "own" the variable. But this is all just to hide having to track that state, and manage it, into get_app_command_from_event. Confusing usage aside, it does make sense to me that get_app_command_from_event would return this.
+                    Oh my god. What if there was a struct like EventToAppCommandConverter that you have to create, and it's THAT struct that keeps state like last_chars_typed? Then instead of having a function return a function, you call EventToAppCommandConverter::New().
+                        struct AppCommandFactory {
+                            previously_typed_chars: String,
+                        }
+                        impl AppCommandFactory {
+                            from_event(&mut self, event) -> AppCommand { ... }
+                        }
     ☐ be able to modify the current total times
         useful for when you want to make corrections, like if you left it in rest mode by accident when you were actually focusing
     ☐ revisit tests
