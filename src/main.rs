@@ -22,6 +22,36 @@ use tui::{
 
 type StandardTerminal = Terminal<CrosstermBackend<Stdout>>;
 
+fn start_main_loop() -> Result<()> {
+    let mut terminal = setup_terminal()?;
+
+    let mut app = App::new();
+    app.start();
+
+    let mut app_command_creator = AppCommandCreator::new();
+
+    loop {
+        if poll(Duration::from_millis(100))? {
+            let event = read()?;
+
+            if let Some(app_command) = app_command_creator.get_app_command_from_event(&event) {
+                match app_command {
+                    AppCommand::EnterRestMode => app.change_session_type(SessionType::Rest),
+                    AppCommand::EnterFocusMode => app.change_session_type(SessionType::Focus),
+                    AppCommand::Pause => app.toggle_pause(),
+                    AppCommand::Quit => break,
+                }
+            }
+        }
+
+        draw_ui(&mut terminal, &app)?;
+    }
+
+    teardown_terminal(terminal)?;
+
+    Ok(())
+}
+
 enum AppCommand {
     EnterRestMode,
     EnterFocusMode,
@@ -64,36 +94,6 @@ impl AppCommandCreator {
             _ => None,
         }
     }
-}
-
-fn start_main_loop() -> Result<()> {
-    let mut terminal = setup_terminal()?;
-
-    let mut app = App::new();
-    app.start();
-
-    let mut app_command_creator = AppCommandCreator::new();
-
-    loop {
-        if poll(Duration::from_millis(100))? {
-            let event = read()?;
-
-            if let Some(app_command) = app_command_creator.get_app_command_from_event(&event) {
-                match app_command {
-                    AppCommand::EnterRestMode => app.change_session_type(SessionType::Rest),
-                    AppCommand::EnterFocusMode => app.change_session_type(SessionType::Focus),
-                    AppCommand::Pause => app.toggle_pause(),
-                    AppCommand::Quit => break,
-                }
-            }
-        }
-
-        draw_ui(&mut terminal, &app)?;
-    }
-
-    teardown_terminal(terminal)?;
-
-    Ok(())
 }
 
 fn teardown_terminal(mut terminal: StandardTerminal) -> Result<()> {
