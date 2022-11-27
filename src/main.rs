@@ -26,6 +26,44 @@ enum AppCommand {
     EnterRestMode,
     EnterFocusMode,
     Pause,
+    Quit,
+}
+
+#[derive(Default)]
+struct AppCommandCreator {
+    previously_typed_chars: String,
+}
+
+impl AppCommandCreator {
+    fn new() -> Self {
+        Default::default()
+    }
+
+    fn get_app_command_from_event(&mut self, event: &Event) -> Option<AppCommand> {
+        match event {
+            Event::Key(key_event) => match key_event.code {
+                KeyCode::Char(char) => {
+                    self.previously_typed_chars.push(char);
+                    if self.previously_typed_chars.chars().count() > 4 {
+                        self.previously_typed_chars = self.previously_typed_chars[..4].to_string();
+                    }
+
+                    if self.previously_typed_chars == "quit" {
+                        Some(AppCommand::Quit)
+                    } else {
+                        match char {
+                            'f' => Some(AppCommand::EnterFocusMode),
+                            'r' => Some(AppCommand::EnterRestMode),
+                            'p' => Some(AppCommand::Pause),
+                            _ => None,
+                        }
+                    }
+                }
+                _ => None,
+            },
+            _ => None,
+        }
+    }
 }
 
 fn start_main_loop() -> Result<()> {
@@ -34,31 +72,19 @@ fn start_main_loop() -> Result<()> {
     let mut app = App::new();
     app.start();
 
-    let quit_char_sequence = String::from("quit");
-    let mut previously_typed_characters = String::from("");
+    let mut app_command_creator = AppCommandCreator::new();
 
     loop {
         if poll(Duration::from_millis(100))? {
             let event = read()?;
 
-            if let Some(app_command) = get_app_command_from_event(&event) {
+            if let Some(app_command) = app_command_creator.get_app_command_from_event(&event) {
                 match app_command {
                     AppCommand::EnterRestMode => app.change_session_type(SessionType::Rest),
                     AppCommand::EnterFocusMode => app.change_session_type(SessionType::Focus),
                     AppCommand::Pause => app.toggle_pause(),
+                    AppCommand::Quit => break,
                 }
-            }
-
-            if let Some(typed_char) = get_typed_char(&event) {
-                previously_typed_characters.push(typed_char);
-                if previously_typed_characters.chars().count() > quit_char_sequence.chars().count()
-                {
-                    previously_typed_characters = String::from(&previously_typed_characters[1..]);
-                }
-            }
-
-            if previously_typed_characters == quit_char_sequence {
-                break;
             }
         }
 
@@ -68,31 +94,6 @@ fn start_main_loop() -> Result<()> {
     teardown_terminal(terminal)?;
 
     Ok(())
-}
-
-fn get_app_command_from_event(event: &Event) -> Option<AppCommand> {
-    match event {
-        Event::Key(key_event) => match key_event.code {
-            KeyCode::Char(char) => match char {
-                'f' => Some(AppCommand::EnterFocusMode),
-                'r' => Some(AppCommand::EnterRestMode),
-                'p' => Some(AppCommand::Pause),
-                _ => None,
-            },
-            _ => None,
-        },
-        _ => None,
-    }
-}
-
-fn get_typed_char(event: &Event) -> Option<char> {
-    match event {
-        Event::Key(key_event) => match key_event.code {
-            KeyCode::Char(char) => Some(char),
-            _ => None,
-        },
-        _ => None,
-    }
 }
 
 fn teardown_terminal(mut terminal: StandardTerminal) -> Result<()> {
@@ -191,7 +192,7 @@ fn draw_ui(terminal: &mut StandardTerminal, app: &App) -> Result<()> {
             Spans::from(vec![Span::raw("Press F to enter focus")]),
             Spans::from(vec![Span::raw("Press R to enter rest")]),
             Spans::from(vec![Span::raw("Press P to toggle pause")]),
-            Spans::from(vec![Span::raw("Type \"quit\" to quit")]),
+            Spans::from(vec![Span::raw("Type quit to quit")]),
         ];
         let help_paragraph = Paragraph::new(help_text);
 
