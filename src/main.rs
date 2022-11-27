@@ -1,6 +1,7 @@
 // Stopwatch deps
 use std::{
     collections::HashMap,
+    fmt::Display,
     io::Stdout,
     time::{Duration, SystemTime},
 };
@@ -14,10 +15,10 @@ use crossterm::{
 use std::io;
 use tui::{
     backend::{Backend, CrosstermBackend},
-    layout::{Constraint, Direction, Layout},
+    layout::{Constraint, Direction, Layout, Rect},
     text::{Span, Spans},
     widgets::{Block, Borders, Paragraph},
-    Terminal,
+    Frame, Terminal,
 };
 
 type StandardTerminal = Terminal<CrosstermBackend<Stdout>>;
@@ -115,7 +116,35 @@ fn setup_terminal() -> Result<StandardTerminal> {
 }
 
 fn draw_ui(terminal: &mut StandardTerminal, app: &App) -> Result<()> {
-    terminal.draw(|f| {
+    terminal.draw(|frame| {
+        /*
+            Layout is like this:
+
+            ┌──────────────────────────────┐
+            │ parent vertical              │
+            │ ┌──────────────────────────┐ │
+            │ │ session totals           │ │
+            │ │ ┌──────────┬───────────┐ │ │
+            │ │ │          │           │ │ │
+            │ │ │          │           │ │ │
+            │ │ │          │           │ │ │
+            │ │ │          │           │ │ │
+            │ │ └──────────┴───────────┘ │ │
+            │ │                          │ │
+            │ ├──────────────────────────┤ │
+            │ │current session           │ │
+            │ │                          │ │
+            │ ├──────────────────────────┤ │
+            │ │help                      │ │
+            │ │                          │ │
+            │ │                          │ │
+            │ └──────────────────────────┘ │
+            │                              │
+            └──────────────────────────────┘
+
+            Diagram made with asciiflow
+        */
+
         let parent_vertical_layout = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
@@ -123,94 +152,79 @@ fn draw_ui(terminal: &mut StandardTerminal, app: &App) -> Result<()> {
                 Constraint::Percentage(30),
                 Constraint::Percentage(40),
             ])
-            .split(f.size());
+            .split(frame.size());
 
         let session_totals_layout = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
             .split(parent_vertical_layout[0]);
 
-        let focus_total_block_title =
-            if !app.paused && app.current_session_type == SessionType::Focus {
-                "Focus (Active)"
-            } else {
-                "Focus"
-            };
-
-        let focus_total_block = Block::default()
-            .title(focus_total_block_title)
-            .borders(Borders::ALL);
-        let focus_total_block_inner = focus_total_block.inner(session_totals_layout[0]);
-        let focus_total_duration = app.get_session_type_total_duration(SessionType::Focus);
-        let focus_total_duration_formatted = format_duration(focus_total_duration);
-        let focus_total_text = vec![Spans::from(vec![Span::raw(format!(
-            "Total time: {}",
-            focus_total_duration_formatted
-        ))])];
-        let focus_total_paragraph = Paragraph::new(focus_total_text);
-
-        let rest_total_block_title = if !app.paused && app.current_session_type == SessionType::Rest
-        {
-            "Rest (Active)"
-        } else {
-            "Rest"
-        };
-        let rest_total_block = Block::default()
-            .title(rest_total_block_title)
-            .borders(Borders::ALL);
-        let rest_total_block_inner = rest_total_block.inner(session_totals_layout[1]);
-        let rest_total_duration = app.get_session_type_total_duration(SessionType::Rest);
-        let rest_total_duration_formatted = format_duration(rest_total_duration);
-        let rest_total_text = vec![Spans::from(vec![Span::raw(format!(
-            "Total time {}",
-            rest_total_duration_formatted
-        ))])];
-        let rest_total_paragraph = Paragraph::new(rest_total_text);
-
-        let current_session_block_title = if app.paused {
-            "Current Session (Paused)"
-        } else {
-            match app.current_session_type {
-                SessionType::Focus => "Current Session (Focus)",
-                SessionType::Rest => "Current Session (Rest)",
-            }
-        };
-        let current_session_block = Block::default()
-            .title(current_session_block_title)
-            .borders(Borders::ALL);
-        let current_session_block_inner = current_session_block.inner(parent_vertical_layout[1]);
-        let current_session_duration = app.get_current_session_duration();
-        let current_session_duration_formatted = format_duration(current_session_duration);
-        let current_session_text = vec![Spans::from(vec![Span::raw(
-            current_session_duration_formatted,
-        )])];
-        let current_session_paragraph = Paragraph::new(current_session_text);
-
-        let help_block = Block::default();
-        let help_block_inner = help_block.inner(parent_vertical_layout[2]);
-        let help_text = vec![
-            Spans::from(vec![Span::raw("Press F to enter focus")]),
-            Spans::from(vec![Span::raw("Press R to enter rest")]),
-            Spans::from(vec![Span::raw("Press P to toggle pause")]),
-            Spans::from(vec![Span::raw("Type quit to quit")]),
-        ];
-        let help_paragraph = Paragraph::new(help_text);
-
-        // RENDERING
-        f.render_widget(focus_total_block, session_totals_layout[0]);
-        f.render_widget(focus_total_paragraph, focus_total_block_inner);
-
-        f.render_widget(rest_total_block, session_totals_layout[1]);
-        f.render_widget(rest_total_paragraph, rest_total_block_inner);
-
-        f.render_widget(current_session_block, parent_vertical_layout[1]);
-        f.render_widget(current_session_paragraph, current_session_block_inner);
-
-        f.render_widget(help_block, parent_vertical_layout[2]);
-        f.render_widget(help_paragraph, help_block_inner);
+        draw_session_type_total(frame, &session_totals_layout[0], app, SessionType::Focus);
+        draw_session_type_total(frame, &session_totals_layout[1], app, SessionType::Rest);
+        draw_current_session(frame, &parent_vertical_layout[1], app);
+        draw_help(frame, &parent_vertical_layout[2]);
     })?;
 
     Ok(())
+}
+
+fn draw_session_type_total(
+    frame: &mut Frame<CrosstermBackend<Stdout>>,
+    area: &Rect,
+    app: &App,
+    session_type: SessionType,
+) {
+    let mut title = format!("{}", session_type);
+    if session_type == app.current_session_type {
+        if app.paused {
+            title = format!("{} (Paused)", title);
+        } else {
+            title = format!("{} (Active)", title);
+        }
+    };
+
+    let block = Block::default().title(title).borders(Borders::ALL);
+    let inner = block.inner(*area);
+    let total_duration = app.get_session_type_total_duration(session_type);
+    let formatted_total_duration = format_duration(total_duration);
+    let total_text = vec![Spans::from(vec![Span::raw(format!(
+        "Total time: {}",
+        formatted_total_duration
+    ))])];
+    let paragraph = Paragraph::new(total_text);
+    frame.render_widget(block, *area);
+    frame.render_widget(paragraph, inner);
+}
+
+fn draw_current_session(frame: &mut Frame<CrosstermBackend<Stdout>>, area: &Rect, app: &App) {
+    let mut statuses: Vec<String> = vec![format!("{}", app.current_session_type)];
+    if app.paused {
+        statuses.push("Paused".into());
+    }
+    let formatted_statuses = format!("({})", statuses.join(", "));
+    let title = format!("{} {}", "Current Session".to_string(), formatted_statuses);
+    let block = Block::default().title(title).borders(Borders::ALL);
+    let inner = block.inner(*area);
+    let duration = app.get_current_session_duration();
+    let formatted_duration = format_duration(duration);
+    let text = vec![Spans::from(vec![Span::raw(formatted_duration)])];
+    let paragraph = Paragraph::new(text);
+    frame.render_widget(block, *area);
+    frame.render_widget(paragraph, inner);
+}
+
+fn draw_help(frame: &mut Frame<CrosstermBackend<Stdout>>, area: &Rect) {
+    let block = Block::default();
+    let inner = block.inner(*area);
+    let text = vec![
+        Spans::from(vec![Span::raw("Press F to enter focus")]),
+        Spans::from(vec![Span::raw("Press R to enter rest")]),
+        Spans::from(vec![Span::raw("Press P to toggle pause")]),
+        Spans::from(vec![Span::raw("Type quit to quit")]),
+    ];
+    let paragraph = Paragraph::new(text);
+    frame.render_widget(block, *area);
+    frame.render_widget(paragraph, inner);
 }
 
 fn format_duration(duration: Option<Duration>) -> String {
@@ -376,6 +390,15 @@ impl Default for Session {
 enum SessionType {
     Focus,
     Rest,
+}
+
+impl Display for SessionType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SessionType::Focus => write!(f, "Focus"),
+            SessionType::Rest => write!(f, "Rest"),
+        }
+    }
 }
 
 #[cfg(test)]
