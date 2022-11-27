@@ -1,60 +1,28 @@
 Immediate stuff:
-    ✔ change "interval" to "session" @done(22-07-10 11:20)
-        While explaining this to Vicky, instead of saying "interval", I was saying "session".
-        Maybe that means I should change the words I used in the technical implementation.
-        But maybe the words used in the technical implementation don't have to match how I describe it.
-        It is technically an "interval", but it is also a session.
-        Interval: a time between events.
-        Session: a period devoted to a particular activity
-        Yeah, I think I want to use words that also have added business meaning. So "session" instead of just "interval".
-    ✘ change "focus" to "work" @cancelled(22-07-10 11:33)
-        Was going to do this because when describing the idea to Vicky I kept saying I "worked" instead of I "focused".
-        But I'd like this to be a "focus stopwatch" not a "work stopwatch".
-    ✔ implement basic tui-rs @done(22-07-10 12:15)
-    ✔ add an event loop that can be exited to end program @done(22-07-11 20:32)
-        Crossterm has an event poll read example https://github.com/crossterm-rs/crossterm/blob/master/examples/event-poll-read.rs
-        Could poll for 15 ms.
-            If no event, redraw
-            if event, process event, redraw
-    ✔ draw basic static ui in draw_ui @done(22-07-14 21:19)
-    ✔ show incrementing current session time @done(22-07-14 22:31)
-    ✔ let user enter rest/focus mode @done(22-07-20 21:09)
-    ✔ make session totals "(Active)" label and current session "(Focus/Rest)" labels update @done(22-07-20 21:30)
-    ✔ let user pause @done(22-07-20 22:08)
-    ✔ clear text on screen when app is closing @done(2022-07-23 15:20)
-    ✔ reset input to top of screen @done(2022-07-23 15:49)
-    ☐ ~~make esc bring up a popup that says "Would you like to quit? Type 'yes' to quit or 'no' to cancel"~~
-        A lot of work.
     ✔ make quiting require typing the word "quit" instead of just hitting the letter q @done(22-11-24 20:57)
-    ☐ refactor AppCommand
-        I think it would be cool if I could just send the AppCommand to the app and let the app handle it. I like how stuff outside the app turns the crossterm event into an appcommand, but I don't think stuff outside should be deciding what methods on the app to call depending on the appcommand. I think the app should be able to handle appcommands. Call it like fn do_app_command(command: AppCommand)
-    ☐ refactor previously_typed_chars
-        I'm not sure how I'd refactor this. I think I want to somehow end up with a an AppCommand::Quit. I dont want start_main_loop to be managing the length of the last typed characters and what not. Maybe have struct "MaxLenString" with an interface like .push(char) & .get() -> String. Then just have to create it, get typed char, push to max_len_string, then see if it's equal to another string. All this refactors though is managing the length of a string. Still have to collect the input, push, and check for equality.
-            Yo maybe I can have get_app_command_from_event return a function that has access to state which tracks last chars typed. Something like this
-                const get_app_command_from_event = () => {
-                    let last_chars_typed = "";
-                    return (event) => {
-                        last_chars_typed.push(event.char);
-                        if last_chars_typed == "quit" {
-                            return AppCommand::Quit
-                        }
-                    };
-                }
-                Though it is a little confusing for get_app_command_from_event to return a function that you then actually have to call to do the thing. But I'm pretty confident I can declare that last_chars_typed thing Just the closure would then "own" the variable. But this is all just to hide having to track that state, and manage it, into get_app_command_from_event. Confusing usage aside, it does make sense to me that get_app_command_from_event would return this.
-                    Oh my god. What if there was a struct like EventToAppCommandConverter that you have to create, and it's THAT struct that keeps state like last_chars_typed? Then instead of having a function return a function, you call EventToAppCommandConverter::New().
-                        struct AppCommandFactory {
-                            previously_typed_chars: String,
-                        }
-                        impl AppCommandFactory {
-                            from_event(&mut self, event) -> AppCommand { ... }
-                        }
+        Right now I don't think there's much value to doing this. It's nice how loosely coupled it is.
+        Except the app can't quit on its own.
+    ✔ refactor previously_typed_chars @done(22-11-27 12:37)
     ☐ be able to modify the current total times
         useful for when you want to make corrections, like if you left it in rest mode by accident when you were actually focusing
+            Userflow
+                1) Press e to edit totals
+                    2) _popup window_
+                    Press f to edit focus total
+                    Press r to edit rest total
+                    Press c to cancel
+                        3) _same popup window's content changes entirely_
+                            Enter new total: █#:##:##
+                            _Cursor moves right as they type valid numbers_
+                            Press backspace to delete
+                            Press enter to save
+                            Press c to cancel
+            Would be nice at this point to have dedicated functions for drawing parts of the screen given some amount of state passed in.
+            Internal workings of editing a total I think would replace all sessions in that edited session type with a single session. If its the active session type, then the session would have no end time. If its paused or the inactive session, then the session has an end time of now.
+            Popup example using tui. Look for app.show_popup. https://github.com/fdehau/tui-rs/blob/master/examples/popup.rs
+
     ☐ revisit tests
         I'd bet there are ways I can improve the testing based on things I've learned since I wrote it.
-
-Bug-fix:
-    ✔ stop text on screen from when before app starts from staying on screen when app is starting @done(22-07-23 14:58)
 
 Long-term:
     - Be able to create your own "modes".
