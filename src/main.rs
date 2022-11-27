@@ -21,9 +21,13 @@ use tui::{
     Frame, Terminal,
 };
 
-type StandardTerminal = Terminal<CrosstermBackend<Stdout>>;
+fn main() {
+    if let Err(e) = main_loop() {
+        println!("Error: {:?}\r", e);
+    }
+}
 
-fn start_main_loop() -> Result<()> {
+fn main_loop() -> Result<()> {
     let mut terminal = setup_terminal()?;
 
     let mut app = App::new();
@@ -96,6 +100,8 @@ impl AppCommandCreator {
         }
     }
 }
+
+type StandardTerminal = Terminal<CrosstermBackend<Stdout>>;
 
 fn teardown_terminal(mut terminal: StandardTerminal) -> Result<()> {
     let backend = terminal.backend_mut();
@@ -244,12 +250,6 @@ fn two_digit_string(number: u64) -> String {
         format!("0{}", number)
     } else {
         number
-    }
-}
-
-fn main() {
-    if let Err(e) = start_main_loop() {
-        println!("Error: {:?}\r", e);
     }
 }
 
