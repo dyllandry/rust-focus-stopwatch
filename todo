@@ -3,6 +3,8 @@ Immediate stuff:
         Right now I don't think there's much value to doing this. It's nice how loosely coupled it is.
         Except the app can't quit on its own.
     ✔ refactor previously_typed_chars @done(22-11-27 12:37)
+    ✔ organize draw_ui by adding helpers @done(22-11-27 18:25)
+        This will make it easier to mentally manage drawing different screens modifying current total times.
     ☐ be able to modify the current total times
         useful for when you want to make corrections, like if you left it in rest mode by accident when you were actually focusing
             Userflow
