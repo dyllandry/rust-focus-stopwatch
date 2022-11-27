@@ -75,7 +75,7 @@ impl AppCommandCreator {
                 KeyCode::Char(char) => {
                     self.previously_typed_chars.push(char);
                     if self.previously_typed_chars.chars().count() > 4 {
-                        self.previously_typed_chars = self.previously_typed_chars[..4].to_string();
+                        self.previously_typed_chars = self.previously_typed_chars[1..].to_string();
                     }
 
                     if self.previously_typed_chars == "quit" {
