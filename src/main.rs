@@ -386,7 +386,7 @@ impl Default for Session {
     }
 }
 
-#[derive(Eq, Hash, PartialEq, Clone, Copy)]
+#[derive(Debug, Eq, Hash, PartialEq, Clone, Copy)]
 enum SessionType {
     Focus,
     Rest,
@@ -403,69 +403,64 @@ impl Display for SessionType {
 
 #[cfg(test)]
 mod tests {
-    use std::{ops::Add, thread};
+    use std::thread;
 
     use super::*;
 
     #[test]
-    fn stopwatch_duration_increases_over_time() {
+    fn app_is_in_focus_mode_given_app_start_up() {
         let mut app = App::new();
         app.start();
-        thread::sleep(Duration::from_millis(20));
+        let current_mode = app.current_session_type;
+        assert_eq!(current_mode, SessionType::Focus);
+    }
+
+    #[test]
+    fn session_time_increases_given_time_passes() {
+        let mut app = App::new();
+        app.start();
+        thread::sleep(Duration::from_millis(1));
         let duration = app.get_current_session_duration().unwrap();
-        assert!(duration.gt(&Duration::from_millis(0)));
+        assert!(duration.as_millis() > 0);
     }
 
     #[test]
-    fn pause_stops_duration_from_increasing() {
+    fn session_type_total_time_keeps_increases_given_being_paused_and_restarted() {
         let mut app = App::new();
         app.start();
-        thread::sleep(Duration::from_millis(20));
+        thread::sleep(Duration::from_millis(1));
         app.pause();
-        let duration_at_pause: Duration = app.get_current_session_duration().unwrap();
-        thread::sleep(Duration::from_millis(100));
-        let duration_after_waiting: Duration = app.get_current_session_duration().unwrap();
-        assert_eq!(duration_at_pause, duration_after_waiting);
+        thread::sleep(Duration::from_millis(1));
+        app.start();
+        thread::sleep(Duration::from_millis(1));
+        let duration = app
+            .get_session_type_total_duration(app.current_session_type)
+            .unwrap();
+        dbg!(duration.as_millis());
+        assert!(duration.as_millis() == 2);
     }
 
     #[test]
-    fn pause_creates_new_session() {
+    fn session_type_total_time_does_not_increase_given_it_is_paused() {
         let mut app = App::new();
         app.start();
-        thread::sleep(Duration::from_millis(50));
         app.pause();
-        app.start();
-        thread::sleep(Duration::from_millis(25));
+        thread::sleep(Duration::from_millis(1));
         let duration = app.get_current_session_duration().unwrap();
-        assert!(duration.le(&Duration::from_millis(50)) && duration.gt(&Duration::from_millis(10)));
+        assert!(duration.as_millis() == 0);
     }
 
     #[test]
-    fn total_duration_equals_all_sessions() {
+    fn session_type_total_time_does_not_increase_given_a_different_session_type_time_is_increasing()
+    {
         let mut app = App::new();
         app.start();
-        thread::sleep(Duration::from_millis(20));
-        let duration_1 = app.get_current_session_duration().unwrap();
-        app.pause();
-        app.start();
-        thread::sleep(Duration::from_millis(20));
-        let duration_2 = app.get_current_session_duration().unwrap();
-        let total_duration = app
+        thread::sleep(Duration::from_millis(1));
+        app.change_session_type(SessionType::Rest);
+        thread::sleep(Duration::from_millis(2));
+        let duration = app
             .get_session_type_total_duration(SessionType::Focus)
             .unwrap();
-        assert!(total_duration.gt(&duration_1.add(duration_2)));
-    }
-
-    #[test]
-    fn changing_session_type_creates_new_session() {
-        let mut app = App::new();
-        app.start();
-        thread::sleep(Duration::from_millis(20));
-        let focus_duration = app.get_current_session_duration().unwrap();
-        app.change_session_type(SessionType::Rest);
-        thread::sleep(Duration::from_millis(20));
-        let rest_duration = app.get_current_session_duration().unwrap();
-        assert!(focus_duration.le(&Duration::from_millis(40)));
-        assert!(rest_duration.le(&Duration::from_millis(40)));
+        assert!(duration.as_millis() == 1);
     }
 }

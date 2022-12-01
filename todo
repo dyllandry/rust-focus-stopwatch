@@ -22,9 +22,38 @@ Immediate stuff:
             Would be nice at this point to have dedicated functions for drawing parts of the screen given some amount of state passed in.
             Internal workings of editing a total I think would replace all sessions in that edited session type with a single session. If its the active session type, then the session would have no end time. If its paused or the inactive session, then the session has an end time of now.
             Popup example using tui. Look for app.show_popup. https://github.com/fdehau/tui-rs/blob/master/examples/popup.rs
+	    Technical implementation todo
+	    	add app commands
+			AppCommand::EnterEditMode
+			AppCommand::EditFocusTotal
+			AppCommand::EditRestTotal
+			AppCommand::CancelEditMode
+				used in both levels of the popup
+			AppCommand::InputNumber
+			AppCommand::DeleteInput
+			AppCommand::SaveNewTotal
+		some app state
+			is edit window is open
+			is editing focus or rest total
+			numbers that user is inputting
+		app functions
+			enter edit mode
+			exit edit mode
+			select rest or focus total to edit
+			accept number user is entering for new total
+			save total
+		Maybe I should revisit tests before adding more functionality...
 
-    ☐ revisit tests
+    [x] revisit tests @done(22-11-30 23:27)
         I'd bet there are ways I can improve the testing based on things I've learned since I wrote it.
+	I want to do behaviour driven tests. Instead of testing internal state.
+	Possible new tests
+		<thing> <does> given <prelude>
+		[x] app is in focus mode given app start up
+		[x] session time increases given time passes
+		[x] session type total time keeps increases given being paused and restarted
+		[x] session type total time does not increase given it is paused
+		[x] session type total time does not increase given a different session type time is increasing
 
 Long-term:
     - Be able to create your own "modes".
